@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReWear - Clothing Exchange & Swap Marketplace</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; }
+    .glass-nav {
+      background: rgba(255,255,255,.96);
+      backdrop-filter: blur(10px);
+    }
+    .page { display: none; }
+    .page.active { display: block; }
+    .nav-btn.active {
+      color: #047857;
+      background: #ecfdf5;
+    }
+    .product-image {
+      width: 100%;
+      height: 245px;
+      object-fit: cover;
+      background: #f3f4f6;
+    }
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(0,0,0,.55);
+    }
+    .modal.show { display: flex; }
+    .modal-card {
+      background: white;
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border-radius: 20px;
+      padding: 24px;
+    }
+    input, select, textarea {
+      max-width: 100%;
+    }
+    button { cursor: pointer; }
+    .chat-area { height: 380px; }
+    @media (max-width: 640px) {
+      .product-image { height: 220px; }
+      .chat-area { height: 340px; }
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800">
+
+<!-- ================= NAVBAR ================= -->
+<header class="glass-nav border-b sticky top-0 z-40 shadow-sm">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+
+    <button onclick="navigateTo('marketplace')"
+      class="flex items-center gap-2 text-left">
+      <span class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xl">
+        🔄
+      </span>
+      <span>
+        <span class="block text-xl font-black text-emerald-800">ReWear</span>
+        <span class="block text-xs text-emerald-600">Clothing Swap Marketplace</span>
+      </span>
+    </button>
+
+    <nav class="hidden lg:flex gap-1">
+      <button class="nav-btn active px-3 py-2 rounded-lg text-sm"
+        data-page="marketplace" onclick="navigateTo('marketplace')">
+        Marketplace
+      </button>
+      <button class="nav-btn px-3 py-2 rounded-lg text-sm"
+        data-page="dashboard" onclick="navigateTo('dashboard')">
+        My Swaps
+      </button>
+      <button class="nav-btn px-3 py-2 rounded-lg text-sm"
+        data-page="chat" onclick="navigateTo('chat')">
+        Chat
+      </button>
+      <button class="nav-btn px-3 py-2 rounded-lg text-sm"
+        data-page="admin" onclick="navigateTo('admin')">
+        Admin Panel
+      </button>
+    </nav>
+
+    <div class="flex items-center gap-2">
+      <button onclick="openListingModal()"
+        class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-bold">
+        + List Item
+      </button>
+      <div class="hidden sm:block text-right text-xs">
+        <strong class="block">Rahul S.</strong>
+        <span class="text-gray-500">Delhi, India</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="lg:hidden flex justify-around border-t py-2 bg-white">
+    <button onclick="navigateTo('marketplace')" class="text-xs font-semibold">Marketplace</button>
+    <button onclick="navigateTo('dashboard')" class="text-xs font-semibold">My Swaps</button>
+    <button onclick="navigateTo('chat')" class="text-xs font-semibold">Chat</button>
+    <button onclick="navigateTo('admin')" class="text-xs font-semibold">Admin</button>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 min-h-screen">
+
+<!-- ================= MARKETPLACE ================= -->
+<section id="page-marketplace" class="page active space-y-6">
+
+  <div class="bg-emerald-800 text-white rounded-2xl p-7 md:p-10">
+    <p class="text-emerald-200 text-sm font-bold uppercase tracking-widest">
+      Sustainable Fashion
+    </p>
+    <h1 class="text-3xl md:text-4xl font-black mt-2">
+      Give Clothes a Second Life
+    </h1>
+    <p class="mt-3 text-emerald-100 max-w-xl">
+      Exchange clothes you no longer wear and discover something new.
+      Save money, refresh your wardrobe and reduce textile waste.
+    </p>
+    <button onclick="openListingModal()"
+      class="mt-5 bg-white text-emerald-800 px-5 py-3 rounded-xl font-bold">
+      List Your Clothes
+    </button>
+  </div>
+
+  <div class="bg-white rounded-2xl p-5 border shadow-sm space-y-4">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <input id="searchInput" type="search"
+        placeholder="Search clothes or brands..."
+        oninput="applyFilters()"
+        class="border rounded-xl px-4 py-3 text-sm w-full">
+
+      <select id="categoryFilter" onchange="applyFilters()"
+        class="border rounded-xl px-3 py-3 text-sm bg-white">
+        <option value="">All Categories</option>
+        <option value="Outerwear">Outerwear / Jackets</option>
+        <option value="Tops">T-shirts & Shirts</option>
+        <option value="Bottoms">Jeans & Trousers</option>
+        <option value="Traditional">Ethnic / Traditional</option>
+        <option value="Footwear">Sneakers & Shoes</option>
+      </select>
+
+      <select id="locationFilter" onchange="applyFilters()"
+        class="border rounded-xl px-3 py-3 text-sm bg-white">
+        <option value="">All Locations</option>
+        <option value="Delhi">Delhi</option>
+        <option value="Mumbai">Mumbai</option>
+        <option value="Bangalore">Bangalore</option>
+        <option value="Agra">Agra</option>
+      </select>
+
+      <select id="sortFilter" onchange="applyFilters()"
+        class="border rounded-xl px-3 py-3 text-sm bg-white">
+        <option value="default">Sort: Recommended</option>
+        <option value="low">Value: Low to High</option>
+        <option value="high">Value: High to Low</option>
+      </select>
+    </div>
+
+    <div class="flex justify-between gap-2 text-xs text-gray-500 border-t pt-3">
+      <span>Discover pre-loved fashion</span>
+      <strong id="item-counter" class="text-emerald-700">0 Items Available</strong>
+    </div>
+  </div>
+
+  <div id="clothing-grid"
+    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+  </div>
+</section>
+
+<!-- ================= ITEM DETAILS ================= -->
+<section id="page-item-detail" class="page space-y-5">
+  <button onclick="navigateTo('marketplace')"
+    class="text-emerald-700 font-bold text-sm">
+    ← Back to Marketplace
+  </button>
+
+  <div class="bg-white rounded-3xl p-5 md:p-8 shadow-sm border grid grid-cols-1 md:grid-cols-2 gap-8">
+    <img id="detail-img" src="" alt="Clothing item"
+      class="w-full h-80 md:h-[480px] object-cover rounded-2xl bg-gray-100">
+
+    <div class="space-y-5">
+      <div>
+        <span id="detail-category"
+          class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold">
+        </span>
+        <h1 id="detail-title" class="text-2xl md:text-3xl font-black mt-3"></h1>
+        <p id="detail-owner" class="text-sm text-gray-500 mt-2"></p>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2 bg-gray-50 border rounded-xl p-4 text-center">
+        <div>
+          <span class="block text-xs text-gray-500">Brand</span>
+          <strong id="detail-brand" class="text-sm"></strong>
+        </div>
+        <div>
+          <span class="block text-xs text-gray-500">Size</span>
+          <strong id="detail-size" class="text-sm"></strong>
+        </div>
+        <div>
+          <span class="block text-xs text-gray-500">Condition</span>
+          <strong id="detail-condition" class="text-xs"></strong>
+        </div>
+      </div>
+
+      <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-5">
+        <span class="text-xs uppercase text-emerald-700 font-bold">Estimated Swap Value</span>
+        <h2 id="detail-value" class="text-3xl font-black text-emerald-800 mt-1"></h2>
+        <p class="text-xs text-emerald-700 mt-2">
+          Indicative points for comparing items, not cash.
+        </p>
+      </div>
+
+      <div>
+        <h3 class="font-bold">Description</h3>
+        <p id="detail-desc" class="text-sm text-gray-600 mt-2"></p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3">
+        <button onclick="openSwapProposalModal()"
+          class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-3 font-bold">
+          Propose Item Swap 🔄
+        </button>
+        <button onclick="startChatWithCurrentOwner()"
+          class="flex-1 bg-gray-100 hover:bg-gray-200 rounded-xl py-3 font-bold">
+          Negotiate Chat 💬
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= DASHBOARD ================= -->
+<section id="page-dashboard" class="page space-y-6">
+
+  <div>
+    <h1 class="text-2xl font-black">My Dashboard</h1>
+    <p class="text-sm text-gray-500 mt-1">
+      Manage your swap requests and listed clothes.
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="bg-white rounded-2xl border p-5">
+      <span class="text-sm text-gray-500">My Listings</span>
+      <h2 id="my-listing-count" class="text-3xl font-black mt-2">0</h2>
+    </div>
+    <div class="bg-white rounded-2xl border p-5">
+      <span class="text-sm text-gray-500">Pending Requests</span>
+      <h2 id="pending-count" class="text-3xl font-black mt-2">0</h2>
+    </div>
+    <div class="bg-white rounded-2xl border p-5">
+      <span class="text-sm text-gray-500">Accepted Requests</span>
+      <h2 id="accepted-count" class="text-3xl font-black mt-2">0</h2>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+    <div class="p-5 border-b bg-gray-50">
+      <h2 class="font-bold">Swap Requests</h2>
+    </div>
+    <div id="swap-requests-list" class="divide-y"></div>
+  </div>
+
+  <div class="bg-white rounded-2xl border shadow-sm p-5">
+    <h2 class="font-bold mb-4">My Listed Closet</h2>
+    <div id="my-closet-list"
+      class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    </div>
+  </div>
+</section>
+
+<!-- ================= CHAT ================= -->
+<section id="page-chat" class="page">
+  <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+    <div class="p-4 border-b flex items-center justify-between gap-3">
+      <div>
+        <h2 id="chat-person" class="font-bold">Priya Sharma</h2>
+        <p id="chat-topic" class="text-xs text-emerald-600">
+          Clothing swap negotiation
+        </p>
+      </div>
+      <button onclick="confirmSwapAgreement()"
+        class="bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs font-bold">
+        Confirm Swap
+      </button>
+    </div>
+
+    <div id="chat-messages"
+      class="chat-area overflow-y-auto p-4 space-y-3 bg-gray-50">
+    </div>
+
+    <form onsubmit="sendMessage(event)"
+      class="p-3 border-t flex gap-2">
+      <input id="chat-input" required
+        placeholder="Write a message..."
+        class="flex-1 min-w-0 border rounded-xl px-4 py-3 text-sm">
+      <button class="bg-emerald-600 text-white px-5 rounded-xl font-bold">
+        Send
+      </button>
+    </form>
+  </div>
+</section>
+
+<!-- ================= ADMIN PANEL ================= -->
+<section id="page-admin" class="page space-y-6">
+
+  <div class="bg-purple-900 text-white p-6 rounded-2xl">
+    <h1 class="text-2xl font-black">Admin Dashboard</h1>
+    <p class="text-purple-200 text-sm mt-2">
+      Manage listings and moderate the marketplace.
+    </p>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
+      <div class="bg-purple-800 p-4 rounded-xl">
+        <span class="text-xs text-purple-200">Total Listings</span>
+        <h2 id="kpi-listings" class="text-2xl font-black mt-2">0</h2>
+      </div>
+      <div class="bg-purple-800 p-4 rounded-xl">
+        <span class="text-xs text-purple-200">Accepted Swaps</span>
+        <h2 id="kpi-swaps" class="text-2xl font-black mt-2">0</h2>
+      </div>
+      <div class="bg-purple-800 p-4 rounded-xl">
+        <span class="text-xs text-purple-200">Unique Owners</span>
+        <h2 id="kpi-users" class="text-2xl font-black mt-2">0</h2>
+      </div>
+      <div class="bg-purple-800 p-4 rounded-xl">
+        <span class="text-xs text-purple-200">Estimated Waste Saved</span>
+        <h2 class="text-2xl font-black mt-2">Demo</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white border rounded-2xl overflow-hidden">
+    <div class="p-5 border-b">
+      <h2 class="font-bold">Listing Moderation</h2>
+      <p class="text-xs text-gray-500 mt-1">Remove inappropriate listings.</p>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm min-w-[650px]">
+        <thead class="bg-gray-50 text-gray-500">
+          <tr>
+            <th class="p-4">Item</th>
+            <th class="p-4">Owner</th>
+            <th class="p-4">Condition</th>
+            <th class="p-4">Value</th>
+            <th class="p-4">Action</th>
+          </tr>
+        </thead>
+        <tbody id="admin-table-body" class="divide-y"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ================= LISTING MODAL ================= -->
+<div id="modal-listing" class="modal">
+  <div class="modal-card">
+    <div class="flex justify-between items-center border-b pb-4 mb-4">
+      <h2 class="text-xl font-black">List an Item</h2>
+      <button onclick="closeListingModal()" class="text-xl">✕</button>
+    </div>
+
+    <form id="listing-form" onsubmit="submitNewListing(event)" class="space-y-4">
+
+      <div>
+        <label class="block text-xs font-bold mb-1">Item Title</label>
+        <input id="new-title" required maxlength="100"
+          placeholder="Vintage Denim Jacket"
+          class="w-full border rounded-xl p-3 text-sm">
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-bold mb-1">Category</label>
+          <select id="new-category" class="w-full border rounded-xl p-3 text-sm">
+            <option value="Outerwear">Outerwear</option>
+            <option value="Tops">Tops</option>
+            <option value="Bottoms">Bottoms</option>
+            <option value="Traditional">Traditional</option>
+            <option value="Footwear">Footwear</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">Brand</label>
+          <input id="new-brand" required maxlength="60"
+            placeholder="Nike, Zara, H&M"
+            class="w-full border rounded-xl p-3 text-sm">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-bold mb-1">Size</label>
+          <select id="new-size" class="w-full border rounded-xl p-3 text-sm">
+            <option>S</option>
+            <option selected>M</option>
+            <option>L</option>
+            <option>XL</option>
+            <option>XXL</option>
+            <option>28</option>
+            <option>30</option>
+            <option>32</option>
+            <option>34</option>
+            <option>8 UK</option>
+            <option>9 UK</option>
+            <option>10 UK</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">Condition</label>
+          <select id="new-condition" class="w-full border rounded-xl p-3 text-sm">
+            <option value="Brand New with Tag">Brand New with Tag</option>
+            <option value="Like New" selected>Like New</option>
+            <option value="Gently Used">Gently Used</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold mb-1">Location</label>
+        <input id="new-location" required maxlength="60"
+          placeholder="Agra, Delhi, Mumbai..."
+          class="w-full border rounded-xl p-3 text-sm">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold mb-1">Image URL</label>
+        <input id="new-img" type="url" required
+          placeholder="https://example.com/image.jpg"
+          class="w-full border rounded-xl p-3 text-sm">
+        <p class="text-xs text-gray-500 mt-1">
+          Use a direct link to an image available online.
+        </p>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold mb-1">Description</label>
+        <textarea id="new-desc" maxlength="500" rows="3"
+          placeholder="Describe the item and its condition..."
+          class="w-full border rounded-xl p-3 text-sm"></textarea>
+      </div>
+
+      <button type="submit"
+        class="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl p-3 font-bold">
+        Publish Listing
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- ================= SWAP MODAL ================= -->
+<div id="modal-swap-request" class="modal">
+  <div class="modal-card">
+    <div class="flex justify-between items-center border-b pb-4 mb-4">
+      <h2 class="text-xl font-black">Choose Your Offer</h2>
+      <button onclick="closeSwapProposalModal()" class="text-xl">✕</button>
+    </div>
+
+    <p class="text-sm text-gray-500 mb-4">
+      Select one of your listed items to offer in exchange.
+    </p>
+
+    <div id="propose-items-container" class="space-y-3"></div>
+
+    <button onclick="submitSwapRequest()"
+      class="w-full mt-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl p-3 font-bold">
+      Send Swap Request
+    </button>
+  </div>
+</div>
+
+<!-- ================= JAVASCRIPT ================= -->
+<script>
+"use strict";
+
+// The current user in this frontend demo.
+const CURRENT_USER = "Rahul S.";
+
+// Sample clothing data.
+let clothingItems = [
+  {
+    id: "c1",
+    title: "Levi's Classic Denim Trucker Jacket",
+    category: "Outerwear",
+    brand: "Levi's",
+    size: "L",
+    condition: "Like New",
+    value: 1250,
+    location: "Delhi",
+    owner: "Rahul S.",
+    image: "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=600",
+    description: "Pure cotton denim jacket, barely worn. Classic button closure."
+  },
+  {
+    id: "c2",
+    title: "Zara Knit Oversized Sweater",
+    category: "Tops",
+    brand: "Zara",
+    size: "M",
+    condition: "Brand New with Tag",
+    value: 1100,
+    location: "Mumbai",
+    owner: "Priya Sharma",
+    image: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=600",
+    description: "Soft knit sweater, perfect for winter styling."
+  },
+  {
+    id: "c3",
+    title: "Handloom Silk Kurta Set",
+    category: "Traditional",
+    brand: "FabIndia",
+    size: "XL",
+    condition: "Like New",
+    value: 1600,
+    location: "Delhi",
+    owner: "Aman Verma",
+    image: "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600",
+    description: "Traditional silk kurta set in excellent condition."
+  },
+  {
+    id: "c4",
+    title: "Nike Air Jordan Retro Sneakers",
+    category: "Footwear",
+    brand: "Nike",
+    size: "9 UK",
+    condition: "Gently Used",
+    value: 2800,
+    location: "Bangalore",
+    owner: "Rohan Das",
+    image: "https://images.unsplash.com/photo-1552346154-21d32810aba3?w=600",
+    description: "Stylish sneakers with minimal visible wear."
+  },
+  {
+    id: "c5",
+    title: "H&M Cargo Pants",
+    category: "Bottoms",
+    brand: "H&M",
+    size: "32",
+    condition: "Gently Used",
+    value: 850,
+    location: "Mumbai",
+    owner: "Priya Sharma",
+    image: "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=600",
+    description: "Relaxed fit cargo trousers with functional pockets."
+  },
+  {
+    id: "c6",
+    title: "Uniqlo Down Puffer Jacket",
+    category: "Outerwear",
+    brand: "Uniqlo",
+    size: "M",
+    condition: "Like New",
+    value: 1900,
+    location: "Bangalore",
+    owner: "Rahul S.",
+    image: "https://images.unsplash.com/photo-1544923246-77307dd654cb?w=600",
+    description: "Lightweight insulated jacket in navy blue."
+  }
+];
+
+// Demo swap requests.
+let swapRequests = [
+  {
+    id: "sr1",
+    fromUser: "Priya Sharma",
+    offeredItemTitle: "Zara Knit Oversized Sweater",
+    offeredValue: 1100,
+    requestedItemTitle: "Levi's Classic Denim Trucker Jacket",
+    requestedValue: 1250,
+    requestedItemId: "c1",
+    offeredItemId: "c2",
+    status: "PENDING"
+  },
+  {
+    id: "sr2",
+    fromUser: "Rohan Das",
+    offeredItemTitle: "Nike Air Jordan Retro Sneakers",
+    offeredValue: 2800,
+    requestedItemTitle: "Handloom Silk Kurta Set",
+    requestedValue: 1600,
+    requestedItemId: "c3",
+    offeredItemId: "c4",
+    status: "ACCEPTED"
+  }
+];
+
+let currentItemInView = null;
+let selectedOfferItemId = null;
+let chatPartner = "Priya Sharma";
+
+// Safely escape text before inserting it into HTML.
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, function(char) {
+    const entities = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    };
+    return entities[char];
+  });
+}
+
+// Only permit HTTP and HTTPS image URLs.
+function safeImageURL(value) {
+  try {
+    const url = new URL(value, window.location.href);
+    if (url.protocol === "https:" || url.protocol === "http:") {
+      return url.href;
+    }
+  } catch (error) {
+    // Return a harmless fallback for invalid URLs.
+  }
+  return "https://placehold.co/600x400?text=Clothing";
+}
+
+function moneyPoints(value) {
+  return Number(value).toLocaleString("en-IN") + " pts";
+}
+
+// Navigation.
+function navigateTo(page) {
+  document.querySelectorAll(".page").forEach(function(section) {
+    section.classList.remove("active");
+  });
+
+  const selectedPage = document.getElementById("page-" + page);
+  if (selectedPage) selectedPage.classList.add("active");
+
+  document.querySelectorAll(".nav-btn").forEach(function(button) {
+    button.classList.toggle("active", button.dataset.page === page);
+  });
+
+  if (page === "dashboard") renderDashboard();
+  if (page === "admin") renderAdminTable();
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// Render marketplace cards.
+function renderMarketplace(items) {
+  const grid = document.getElementById("clothing-grid");
+  document.getElementById("item-counter").textContent =
+    items.length + (items.length === 1 ? " Item Available" : " Items Available");
+
+  if (!items.length) {
+    grid.innerHTML = `
+      <div class="col-span-full bg-white rounded-2xl p-10 text-center border">
+        <div class="text-4xl mb-3">👕</div>
+        <h3 class="font-bold">No items found</h3>
+        <p class="text-sm text-gray-500 mt-2">Try changing your search or filters.</p>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = items.map(function(item) {
+    return `
+      <article class="bg-white rounded-2xl overflow-hidden border shadow-sm hover:shadow-lg transition flex flex-col">
+        <button class="relative block w-full text-left"
+          onclick="viewItemDetail('${escapeHTML(item.id)}')">
+          <img src="${escapeHTML(safeImageURL(item.image))}"
+            alt="${escapeHTML(item.title)}"
+            class="product-image"
+            loading="lazy"
+            onerror="this.onerror=null;this.src='https://placehold.co/600x400?text=Clothing';">
+          <span class="absolute top-3 left-3 bg-white/95 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">
+            ${escapeHTML(item.category)}
+          </span>
+          <span class="absolute top-3 right-3 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-lg">
+            ${moneyPoints(item.value)}
+          </span>
+        </button>
+
+        <div class="p-4 flex-1 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between gap-2 text-xs text-gray-500">
+              <span>${escapeHTML(item.brand)} · Size ${escapeHTML(item.size)}</span>
+              <span>${escapeHTML(item.location)}</span>
+            </div>
+            <h3 class="font-bold text-gray-900 mt-2">${escapeHTML(item.title)}</h3>
+            <p class="text-xs text-gray-500 mt-2">
+              Condition: <strong>${escapeHTML(item.condition)}</strong>
+            </p>
+          </div>
+          <div class="border-t mt-4 pt-3 flex justify-between items-center gap-2">
+            <span class="text-xs text-gray-500">By ${escapeHTML(item.owner)}</span>
+            <button onclick="viewItemDetail('${escapeHTML(item.id)}')"
+              class="bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white px-3 py-2 rounded-lg text-xs font-bold">
+              View & Swap →
+            </button>
+          </div>
+        </div>
+      </article>`;
+  }).join("");
+}
+
+// Search, category, location and sort filters.
+function applyFilters() {
+  const query = document.getElementById("searchInput").value
+    .trim().toLowerCase();
+  const category = document.getElementById("categoryFilter").value;
+  const location = document.getElementById("locationFilter").value;
+  const sort = document.getElementById("sortFilter").value;
+
+  let filtered = clothingItems.filter(function(item) {
+    const searchable = [
+      item.title, item.brand, item.category, item.location, item.description
+    ].join(" ").toLowerCase();
+
+    return searchable.includes(query) &&
+      (!category || item.category === category) &&
+      (!location || item.location.toLowerCase() === location.toLowerCase());
+  });
+
+  if (sort === "low") filtered.sort((a, b) => a.value - b.value);
+  if (sort === "high") filtered.sort((a, b) => b.value - a.value);
+
+  renderMarketplace(filtered);
+}
+
+// Item detail page.
+function viewItemDetail(id) {
+  const item = clothingItems.find(function(entry) {
+    return entry.id === id;
+  });
+
+  if (!item) return;
+
+  currentItemInView = item;
+
+  document.getElementById("detail-img").src = safeImageURL(item.image);
+  document.getElementById("detail-img").alt = item.title;
+  document.getElementById("detail-title").textContent = item.title;
+  document.getElementById("detail-category").textContent = item.category;
+  document.getElementById("detail-owner").textContent =
+    "Listed by " + item.owner + " · " + item.location + ", India";
+  document.getElementById("detail-brand").textContent = item.brand;
+  document.getElementById("detail-size").textContent = item.size;
+  document.getElementById("detail-condition").textContent = item.condition;
+  document.getElementById("detail-value").textContent = moneyPoints(item.value);
+  document.getElementById("detail-desc").textContent = item.description;
+
+  navigateTo("item-detail");
+}
+
+// Swap request modal.
+function openSwapProposalModal() {
+  if (!currentItemInView) {
+    alert("Please select an item first.");
+    return;
+  }
+
+  if (currentItemInView.owner === CURRENT_USER) {
+    alert("You cannot propose a swap for your own item.");
+    return;
+  }
+
+  const myItems = clothingItems.filter(function(item) {
+    return item.owner === CURRENT_USER;
+  });
+
+  const container = document.getElementById("propose-items-container");
+  selectedOfferItemId = null;
+
+  if (!myItems.length) {
+    container.innerHTML = `
+      <p class="text-sm text-gray-500 bg-gray-50 p-4 rounded-xl">
+        You have no listed items. Add a listing before proposing a swap.
+      </p>`;
+  } else {
+    container.innerHTML = myItems.map(function(item) {
+      return `
+        <button type="button"
+          id="offer-${escapeHTML(item.id)}"
+          onclick="selectOfferItem('${escapeHTML(item.id)}')"
+          class="offer-item w-full p-3 border rounded-xl flex items-center gap-3 text-left hover:border-emerald-500">
+          <img src="${escapeHTML(safeImageURL(item.image))}"
+            class="w-14 h-14 object-cover rounded-lg"
+            alt="">
+          <span class="flex-1 min-w-0">
+            <strong class="block text-sm">${escapeHTML(item.title)}</strong>
+            <span class="text-xs text-gray-500">${moneyPoints(item.value)}</span>
+          </span>
+          <span class="text-xs font-bold text-emerald-700">Select</span>
+        </button>`;
+    }).join("");
+  }
+
+  document.getElementById("modal-swap-request").classList.add("show");
+}
+
+function selectOfferItem(id) {
+  selectedOfferItemId = id;
+
+  document.querySelectorAll(".offer-item").forEach(function(button) {
+    button.classList.remove("border-emerald-600", "bg-emerald-50");
+  });
+
+  const selected = document.getElementById("offer-" + id);
+  if (selected) selected.classList.add("border-emerald-600", "bg-emerald-50");
+}
+
+function closeSwapProposalModal() {
+  document.getElementById("modal-swap-request").classList.remove("show");
+  selectedOfferItemId = null;
+}
+
+function submitSwapRequest() {
+  if (!selectedOfferItemId || !currentItemInView) {
+    alert("Please select an item to offer.");
+    return;
+  }
+
+  const offeredItem = clothingItems.find(function(item) {
+    return item.id === selectedOfferItemId;
+  });
+
+  if (!offeredItem || offeredItem.owner !== CURRENT_USER) {
+    alert("Please select one of your own listed items.");
+    return;
+  }
+
+  if (currentItemInView.owner === CURRENT_USER) {
+    alert("You cannot swap your own item.");
+    return;
+  }
+
+  const duplicate = swapRequests.some(function(request) {
+    return request.fromUser === CURRENT_USER &&
+      request.offeredItemId === offeredItem.id &&
+      request.requestedItemId === currentItemInView.id &&
+      request.status === "PENDING";
+  });
+
+  if (duplicate) {
+    alert("You already have a pending request for this item.");
+    return;
+  }
+
+  swapRequests.unshift({
+    id: "sr-" + Date.now(),
+    fromUser: CURRENT_USER,
+    offeredItemTitle: offeredItem.title,
+    offeredValue: offeredItem.value,
+    requestedItemTitle: currentItemInView.title,
+    requestedValue: currentItemInView.value,
+    offeredItemId: offeredItem.id,
+    requestedItemId: currentItemInView.id,
+    status: "PENDING"
+  });
+
+  closeSwapProposalModal();
+  renderDashboard();
+  alert("Demo swap request created successfully.");
+  navigateTo("dashboard");
+}
+
+// Dashboard.
+function renderDashboard() {
+  const myItems = clothingItems.filter(function(item) {
+    return item.owner === CURRENT_USER;
+  });
+
+  document.getElementById("my-listing-count").textContent = myItems.length;
+  document.getElementById("pending-count").textContent =
+    swapRequests.filter(r => r.status === "PENDING").length;
+  document.getElementById("accepted-count").textContent =
+    swapRequests.filter(r => r.status === "ACCEPTED").length;
+
+  const list = document.getElementById("swap-requests-list");
+
+  if (!swapRequests.length) {
+    list.innerHTML = `<p class="p-6 text-sm text-gray-500">No swap requests yet.</p>`;
+  } else {
+    list.innerHTML = swapRequests.map(function(request) {
+      const pending = request.status === "PENDING";
+      const statusClass = request.status === "ACCEPTED"
+        ? "bg-green-100 text-green-800"
+        : request.status === "REJECTED"
+        ? "bg-red-100 text-red-800"
+        : "bg-yellow-100 text-yellow-800";
+
+      return `
+        <div class="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <strong class="text-sm">${escapeHTML(request.fromUser)}</strong>
+              <span class="px-2 py-1 rounded-full text-xs font-bold ${statusClass}">
+                ${escapeHTML(request.status)}
+              </span>
+            </div>
+            <p class="text-sm text-gray-600 mt-2">
+              <strong>Offered:</strong> ${escapeHTML(request.offeredItemTitle)}
+              (${moneyPoints(request.offeredValue)})
+            </p>
+            <p class="text-sm text-gray-600 mt-1">
+              <strong>Requested:</strong> ${escapeHTML(request.requestedItemTitle)}
+              (${moneyPoints(request.requestedValue)})
+            </p>
+          </div>
+
+          ${pending ? `
+            <div class="flex gap-2 shrink-0">
+              <button onclick="updateSwapStatus('${escapeHTML(request.id)}','ACCEPTED')"
+                class="bg-emerald-600 text-white rounded-lg px-3 py-2 text-xs font-bold">
+                Accept
+              </button>
+              <button onclick="updateSwapStatus('${escapeHTML(request.id)}','REJECTED')"
+                class="bg-gray-100 rounded-lg px-3 py-2 text-xs font-bold">
+                Decline
+              </button>
+            </div>` : `
+            <span class="text-xs text-gray-500 font-bold">
+              ${request.status === "ACCEPTED" ? "Agreement accepted" : "Request declined"}
+            </span>`}
+        </div>`;
+    }).join("");
+  }
+
+  const closet = document.getElementById("my-closet-list");
+
+  if (!myItems.length) {
+    closet.innerHTML = `<p class="text-sm text-gray-500">Your closet is empty.</p>`;
+  } else {
+    closet.innerHTML = myItems.map(function(item) {
+      return `
+        <div class="border rounded-xl p-3 flex gap-3 items-center">
+          <img src="${escapeHTML(safeImageURL(item.image))}"
+            alt="" class="w-16 h-16 rounded-lg object-cover">
+          <div class="min-w-0 flex-1">
+            <strong class="text-sm block">${escapeHTML(item.title)}</strong>
+            <span class="text-xs text-emerald-700 font-bold">
+              ${moneyPoints(item.value)}
+            </span>
+            <button onclick="removeMyListing('${escapeHTML(item.id)}')"
+              class="block mt-1 text-xs text-red-600 font-bold">
+              Remove Listing
+            </button>
+          </div>
+        </div>`;
+    }).join("");
+  }
+}
+
+function updateSwapStatus(id, newStatus) {
+  const request = swapRequests.find(function(item) {
+    return item.id === id;
+  });
+
+  if (!request || request.status !== "PENDING") return;
+
+  if (newStatus !== "ACCEPTED" && newStatus !== "REJECTED") return;
+
+  request.status = newStatus;
+  renderDashboard();
+  renderAdminTable();
+
+  alert("Swap request status updated to " + newStatus + ".");
+}
+
+function removeMyListing(id) {
+  const item = clothingItems.find(function(entry) {
+    return entry.id === id;
+  });
+
+  if (!item || item.owner !== CURRENT_USER) return;
+
+  if (!confirm("Remove this item from your closet?")) return;
+
+  clothingItems = clothingItems.filter(entry => entry.id !== id);
+  applyFilters();
+  renderDashboard();
+  renderAdminTable();
+}
+
+// Listing modal.
+function openListingModal() {
+  document.getElementById("modal-listing").classList.add("show");
+}
+
+function closeListingModal() {
+  document.getElementById("modal-listing").classList.remove("show");
+}
+
+function calculateSwapValue(brand, condition, category) {
+  let value = 700;
+  const normalizedBrand = brand.toLowerCase();
+
+  if (
+    normalizedBrand.includes("nike") ||
+    normalizedBrand.includes("zara") ||
+    normalizedBrand.includes("levi")
+  ) value += 400;
+
+  if (condition === "Brand New with Tag") value += 400;
+  if (condition === "Gently Used") value -= 150;
+  if (category === "Footwear") value += 200;
+  if (category === "Traditional") value += 100;
+
+  return Math.max(300, value);
+}
+
+function submitNewListing(event) {
+  event.preventDefault();
+
+  const title = document.getElementById("new-title").value.trim();
+  const category = document.getElementById("new-category").value;
+  const brand = document.getElementById("new-brand").value.trim();
+  const size = document.getElementById("new-size").value;
+  const condition = document.getElementById("new-condition").value;
+  const location = document.getElementById("new-location").value.trim();
+  const rawImage = document.getElementById("new-img").value.trim();
+  const description = document.getElementById("new-desc").value.trim();
+
+  if (!title || !brand || !location) {
+    alert("Please fill in all required fields.");
+    return;
+  }
+
+  let parsedURL;
+  try {
+    parsedURL = new URL(rawImage);
+  } catch (error) {
+    alert("Please enter a valid image URL.");
+    return;
+  }
+
+  if (parsedURL.protocol !== "https:" && parsedURL.protocol !== "http:") {
+    alert("Only HTTP or HTTPS image links are supported.");
+    return;
+  }
+
+  const value = calculateSwapValue(brand, condition, category);
+
+  const newItem = {
+    id: "c-" + Date.now(),
+    title,
+    category,
+    brand,
+    size,
+    condition,
+    value,
+    location,
+    owner: CURRENT_USER,
+    image: parsedURL.href,
+    description: description || "A pre-loved clothing item listed for exchange."
+  };
+
+  clothingItems.unshift(newItem);
+
+  document.getElementById("listing-form").reset();
+  closeListingModal();
+
+  applyFilters();
+  renderDashboard();
+  renderAdminTable();
+
+  alert("Listing published! Estimated swap value: " + moneyPoints(value));
+}
+
+// Chat.
+function startChatWithCurrentOwner() {
+  if (!currentItemInView) return;
+
+  chatPartner = currentItemInView.owner;
+
+  document.getElementById("chat-person").textContent = chatPartner;
+  document.getElementById("chat-topic").textContent =
+    "Discussing: " + currentItemInView.title;
+
+  navigateTo("chat");
+  renderChat();
+}
+
+function renderChat() {
+  const box = document.getElementById("chat-messages");
+
+  box.innerHTML = `
+    <div class="flex justify-start">
+      <div class="bg-white border rounded-2xl p-3 max-w-[85%] text-sm">
+        Hi! Let's discuss the clothing swap.
+        <span class="block text-xs text-gray-400 mt-2">Demo conversation</span>
+      </div>
+    </div>`;
+}
+
+function sendMessage(event) {
+  event.preventDefault();
+
+  const input = document.getElementById("chat-input");
+  const message = input.value.trim();
+
+  if (!message) return;
+
+  const box = document.getElementById("chat-messages");
+  const wrapper = document.createElement("div");
+  wrapper.className = "flex justify-end";
+
+  const bubble = document.createElement("div");
+  bubble.className =
+    "bg-emerald-600 text-white rounded-2xl px-4 py-3 text-sm max-w-[85%] break-words";
+
+  const text = document.createElement("p");
+  text.textContent = message;
+
+  const time = document.createElement("span");
+  time.className = "block text-xs text-emerald-100 mt-2";
+  time.textContent = new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
+  bubble.appendChild(text);
+  bubble.appendChild(time);
+  wrapper.appendChild(bubble);
+  box.appendChild(wrapper);
+
+  input.value = "";
+  box.scrollTop = box.scrollHeight;
+}
+
+function confirmSwapAgreement() {
+  const relevantRequest = swapRequests.find(function(request) {
+    return request.status === "PENDING" &&
+      (request.fromUser === chatPartner ||
+       request.requestedItemTitle === (currentItemInView || {}).title);
+  });
+
+  if (!relevantRequest) {
+    alert("No matching pending request was found in this demo.");
+    return;
+  }
+
+  if (!confirm("Confirm this swap agreement in the demo?")) return;
+
+  relevantRequest.status = "ACCEPTED";
+  renderDashboard();
+  renderAdminTable();
+
+  alert("Demo agreement accepted. Arrange delivery details separately.");
+}
+
+// Admin moderation.
+function renderAdminTable() {
+  const tbody = document.getElementById("admin-table-body");
+
+  document.getElementById("kpi-listings").textContent = clothingItems.length;
+  document.getElementById("kpi-swaps").textContent =
+    swapRequests.filter(r => r.status === "ACCEPTED").length;
+  document.getElementById("kpi-users").textContent =
+    new Set(clothingItems.map(item => item.owner)).size;
+
+  if (!clothingItems.length) {
+    tbody.innerHTML = `
+      <tr><td colspan="5" class="p-6 text-center text-gray-500">
+        No listings available.
+      </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = clothingItems.map(function(item) {
+    return `
+      <tr class="hover:bg-gray-50">
+        <td class="p-4">
+          <div class="flex items-center gap-3">
+            <img src="${escapeHTML(safeImageURL(item.image))}"
+              alt="" class="w-12 h-12 object-cover rounded-lg">
+            <div>
+              <strong class="block">${escapeHTML(item.title)}</strong>
+              <span class="text-xs text-gray-500">
+                ${escapeHTML(item.category)} · ${escapeHTML(item.brand)}
+              </span>
+            </div>
+          </div>
+        </td>
+        <td class="p-4">${escapeHTML(item.owner)}</td>
+        <td class="p-4">${escapeHTML(item.condition)}</td>
+        <td class="p-4 font-bold text-emerald-700">${moneyPoints(item.value)}</td>
+        <td class="p-4">
+          <button onclick="adminRemoveItem('${escapeHTML(item.id)}')"
+            class="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-3 py-2 rounded-lg text-xs font-bold">
+            Delete
+          </button>
+        </td>
+      </tr>`;
+  }).join("");
+}
+
+function adminRemoveItem(id) {
+  if (!confirm("Delete this listing from the demo marketplace?")) return;
+
+  clothingItems = clothingItems.filter(item => item.id !== id);
+
+  if (currentItemInView && currentItemInView.id === id) {
+    currentItemInView = null;
+    navigateTo("marketplace");
+  }
+
+  applyFilters();
+  renderDashboard();
+  renderAdminTable();
+}
+
+// Close modals when clicking outside their cards.
+document.querySelectorAll(".modal").forEach(function(modal) {
+  modal.addEventListener("click", function(event) {
+    if (event.target === modal) modal.classList.remove("show");
+  });
+});
+
+// Close modals with Escape.
+document.addEventListener("keydown", function(event) {
+  if (event.key === "Escape") {
+    document.querySelectorAll(".modal").forEach(function(modal) {
+      modal.classList.remove("show");
+    });
+  }
+});
+
+// Initial render.
+document.addEventListener("DOMContentLoaded", function() {
+  applyFilters();
+  renderDashboard();
+  renderAdminTable();
+  renderChat();
+});
+</script>
+
+</body>
+</html>
